@@ -15,3 +15,5 @@ S3_BUCKET_NAME = "oscars-rsotc-data"
 S3_ENDPOINT_URL = os.getenv("S3_ENDPOINT_URL")
 S3_ACCESS_KEY = os.getenv("S3_ACCESS_KEY")
 S3_SECRET_KEY = os.getenv("S3_SECRET_KEY")
+S3_REGION = os.getenv("S3_REGION")
+INPUT_DATA_DIR = os.getenv("INPUT_DATA_DIR")

@@ -14,9 +14,11 @@ import fsspec
 import xarray as xr
 
 from app.config import (
+    INPUT_DATA_DIR,
     S3_ACCESS_KEY,
     S3_BUCKET_NAME,
     S3_ENDPOINT_URL,
+    S3_REGION,
     S3_SECRET_KEY,
 )
 from app.models.annual_cycle_params import AnnualCycleParams
@@ -39,10 +41,6 @@ RequestParams = Union[
 
 logger = logging.getLogger(__name__)
 
-
-# ---------- helpers ----------
-
-LOCAL_DATA_DIR = "/data"
 
 # Full set of available variables and indices
 BASE_VARIABLES = [
@@ -78,11 +76,15 @@ def _s3_storage_options() -> dict:
     dict
         A dictionary containing S3 storage configuration.
     """
+    client_kwargs = {"endpoint_url": S3_ENDPOINT_URL}
+    if S3_REGION:
+        client_kwargs["region_name"] = S3_REGION
+
     return {
         "anon": False,
         "key": S3_ACCESS_KEY,
         "secret": S3_SECRET_KEY,
-        "client_kwargs": {"endpoint_url": S3_ENDPOINT_URL},
+        "client_kwargs": client_kwargs,
         "default_fill_cache": False,
         "use_listings_cache": True,
         "config_kwargs": {"max_pool_connections": 64},
@@ -117,7 +119,7 @@ def _build_dataset_mapping() -> dict[Tuple[str, str, str, str], dict]:
             continue
         variable, level, dataset, region_set = parts
 
-        local_path = os.path.join(LOCAL_DATA_DIR, f"{name}.zarr")
+        local_path = os.path.join(INPUT_DATA_DIR, f"{name}.zarr")
         s3_path = f"s3://{path}"
 
         mapping[(variable, level, dataset, region_set)] = {

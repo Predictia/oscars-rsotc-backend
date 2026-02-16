@@ -1,6 +1,6 @@
 graph TD
     User([User/Client]) -->|REST Request| FastAPI{FastAPI App}
-    
+
     subgraph "Request Handling"
         FastAPI -->|"1. Validate Parameters"| Pydantic[Pydantic Models]
         Pydantic -->|"2. Route to Router"| Routers[app.routers]
