@@ -47,24 +47,35 @@ Before running the project, copy the sample environment file and fill in your cr
 cp .env-sample .env
 ```
 
+To export the environment variables to your current shell session, you can use:
+
+```bash
+set -a
+source .env
+set +a
+```
+
 ## Data Loading
 
 The backend uses a flexible data loading mechanism defined in `app/load.py`. It manages datasets stored in [Zarr](https://zarr.readthedocs.io/en/stable/) format.
 
-### Configuration
+### Environment Variables
 
-Data source is configured via environment variables (see `.env-sample`):
+Data source and storage are configured via environment variables (see `.env-sample`):
 
 - `S3_BUCKET_NAME`: The name of the S3 bucket containing the data.
 - `S3_ENDPOINT_URL`: The URL of the S3 service.
 - `S3_ACCESS_KEY`: S3 access key.
 - `S3_SECRET_KEY`: S3 secret key.
+- `S3_REGION`: The AWS region of the S3 bucket (optional).
+- `INPUT_DATA_DIR`: Local directory to scan for datasets (optional). If provided, the backend scans this directory for `.zarr` files instead of listing S3.
 
 ### Loading Logic
 
-1. **Dataset Mapping**: On startup or first request, the backend scans the S3 bucket for `.zarr` files and builds a mapping based on the filename structure: `{variable}_{level}_{dataset}_{region_set}.zarr`.
-1. **Local Fallback**: When a dataset is requested, the backend first attempts to find it in the local directory specified by `LOCAL_DATA_DIR` (default: `/data`). This is useful for local development or when data is pre-downloaded.
-1. **S3 Fetching**: If the local file is not found, it streams the data directly from S3 using `fsspec` and `xarray`.
+1. **Dataset Mapping**: On startup or first request, the backend builds a mapping of available datasets. If `INPUT_DATA_DIR` is set and exists, it scans that local directory. Otherwise, it scans the S3 bucket. Metadata is extracted from filenames following the pattern: `{variable}_{level}_{dataset}_{region_set}.zarr`.
+1. **Data Retrieval**: When a dataset is requested:
+   - It first attempts to load it from the local path defined in the mapping (if `INPUT_DATA_DIR` was used or if the file exists locally).
+   - If the local file is not available, it fallbacks to streaming from S3 using `fsspec` and `xarray` (provided S3 credentials are set).
 
 ## API Endpoints
 

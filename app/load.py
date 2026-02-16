@@ -97,8 +97,9 @@ def _build_dataset_mapping() -> dict[Tuple[str, str, str, str], dict]:
     """
     Build a mapping from dataset attributes to their storage paths.
 
-    The mapping includes both local and S3 URIs for each dataset found in the
-    configured S3 bucket.
+    The mapping includes both local and S3 URIs for each dataset.
+    If INPUT_DATA_DIR is provided and exists, it scans that directory.
+    Otherwise, it lists the configured S3 bucket.
 
     Returns
     -------
@@ -106,26 +107,50 @@ def _build_dataset_mapping() -> dict[Tuple[str, str, str, str], dict]:
         A dictionary where keys are (variable, level, dataset, region_set)
         and values are dictionaries containing "local" and "s3" paths.
     """
-    fs = fsspec.filesystem("s3", **_s3_storage_options())
-    entries = fs.ls(S3_BUCKET_NAME)
-
     mapping: dict[Tuple[str, str, str, str], dict] = {}
-    for path in entries:
-        if not path.endswith(".zarr"):
-            continue
-        name = path.rsplit("/", 1)[-1][:-5]  # strip .zarr
-        parts = name.split("_")
-        if len(parts) != 4:
-            continue
-        variable, level, dataset, region_set = parts
 
-        local_path = os.path.join(INPUT_DATA_DIR, f"{name}.zarr")
-        s3_path = f"s3://{path}"
+    if INPUT_DATA_DIR and os.path.exists(INPUT_DATA_DIR):
+        logger.info(f"Scanning local directory for datasets: {INPUT_DATA_DIR}")
+        entries = [
+            f
+            for f in os.listdir(INPUT_DATA_DIR)
+            if os.path.isdir(os.path.join(INPUT_DATA_DIR, f)) and f.endswith(".zarr")
+        ]
+        for name in entries:
+            # name is already something like tas_None_ERA5_NUTS-0.zarr
+            parts = name[:-5].split("_")  # strip .zarr
+            if len(parts) != 4:
+                continue
+            variable, level, dataset, region_set = parts
 
-        mapping[(variable, level, dataset, region_set)] = {
-            "local": local_path,
-            "s3": s3_path,
-        }
+            mapping[(variable, level, dataset, region_set)] = {
+                "local": os.path.join(INPUT_DATA_DIR, name),
+                "s3": f"s3://{S3_BUCKET_NAME}/{name}",
+            }
+    else:
+        logger.info(f"Scanning S3 bucket for datasets: {S3_BUCKET_NAME}")
+        fs = fsspec.filesystem("s3", **_s3_storage_options())
+        entries = fs.ls(S3_BUCKET_NAME)
+
+        for path in entries:
+            if not path.endswith(".zarr"):
+                continue
+            name = path.rsplit("/", 1)[-1][:-5]  # strip .zarr
+            parts = name.split("_")
+            if len(parts) != 4:
+                continue
+            variable, level, dataset, region_set = parts
+
+            local_path = (
+                os.path.join(INPUT_DATA_DIR, f"{name}.zarr") if INPUT_DATA_DIR else None
+            )
+            s3_path = f"s3://{path}"
+
+            mapping[(variable, level, dataset, region_set)] = {
+                "local": local_path,
+                "s3": s3_path,
+            }
+
     logger.info(f"Built dataset mapping with {len(mapping)} entries")
     return mapping
 
@@ -277,17 +302,28 @@ def get_datasets(params: RequestParams) -> Union[xr.Dataset, list[xr.Dataset]]:
 
         try:
             paths = mapping[(varname, level, dataset_name, region_set)]
-            try:
-                logger.info(
-                    f"Loading local dataset for {combined_variable} "
-                    f"from {paths['local']}"
-                )
-                ds = _open_zarr_local(paths["local"])
-            except Exception as e:
-                logger.debug(
-                    f"Local open failed for {combined_variable}: {e}. Trying S3..."
-                )
+            ds = None
+
+            # Try local loading first if local path exists
+            if paths.get("local"):
+                try:
+                    logger.info(
+                        f"Loading local dataset for {combined_variable} "
+                        f"from {paths['local']}"
+                    )
+                    ds = _open_zarr_local(paths["local"])
+                except Exception as e:
+                    logger.debug(
+                        f"Local open failed for {combined_variable}: {e}. Trying S3..."
+                    )
+
+            # Fallback to S3 if local failed or was not available
+            if ds is None and paths.get("s3"):
                 ds = _open_zarr_s3(paths["s3"])
+
+            if ds is None:
+                logger.error(f"Failed to load dataset for {combined_variable}")
+                continue
 
             if varname in ds.data_vars:
                 # Transform sfcWind from m/s to km/h
