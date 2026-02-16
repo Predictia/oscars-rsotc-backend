@@ -1,0 +1,59 @@
+[dependencies]
+dask = "*"
+fastapi = "*"
+fsspec = "*"
+make = "*"
+netcdf4 = "*"
+numpy = "*"
+pandas = "*"
+pip = "*"
+pydantic = "*"
+pytest = ">=9.0.2,<10"
+python = "==3.11"
+python-dotenv = "*"
+requests = "*"
+s3fs = "*"
+uvicorn = "*"
+xarray = "*"
+zarr = "*"
+
+[environments]
+dev = ["dev"]
+docs = ["docs"]
+
+[feature.dev.dependencies]
+black = "*"
+mypy = "*"
+pre-commit = "*"
+pytest = "*"
+pytest-cov = "*"
+ruff = "*"
+
+[feature.docs.dependencies]
+nbsphinx = "*"
+pandoc = "*"
+sphinx = "*"
+sphinx-autoapi = "*"
+sphinx-rtd-theme = "*"
+
+[feature.docs.tasks]
+docs-build = "cp README.md docs/. && cd docs && rm -fr _api && make clean && make html"
+
+[pypi-dependencies]
+oscars-rsotc-backend = {path = ".", editable = true}
+
+[pypi-options]
+index-url = "https://pypi.org/simple"
+
+[tasks]
+dev = "python main.py"
+docker-build = "docker build -t oscars-rsotc-backend ."
+docker-run = "docker run --rm -ti -v $(pwd):/srv oscars-rsotc-backend"
+qa = "pre-commit run --all-files"
+type-check = "python -m mypy ."
+unit-tests = "python -m pytest -vv --cov=. --cov-report=html --doctest-glob='*.md' --doctest-glob='*.rst' tests"
+
+[workspace]
+channels = ["conda-forge"]
+name = "oscars-rsotc-backend"
+platforms = ["linux-64"]

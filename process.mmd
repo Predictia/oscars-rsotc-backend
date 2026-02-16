@@ -1,0 +1,42 @@
+graph TD
+    User([User/Client]) -->|REST Request| FastAPI{FastAPI App}
+    
+    subgraph "Request Handling"
+        FastAPI -->|"1. Validate Parameters"| Pydantic[Pydantic Models]
+        Pydantic -->|"2. Route to Router"| Routers[app.routers]
+    end
+
+    subgraph "Endpoints"
+        Routers --> TS["/time_series"]
+        Routers --> CM["/climatology_map"]
+        Routers --> AC["/annual_cycle"]
+        Routers --> EV["/extreme_values"]
+        Routers --> HG["/histograms"]
+        Routers --> SS["/summary_stats"]
+    end
+
+    subgraph "Business Logic & Services"
+        TS --> TS_S[app.services.time_series]
+        CM --> CM_S[app.services.climatology_map]
+        AC --> AC_S[app.services.annual_cycle]
+        EV --> EV_S[app.services.extreme_values]
+        HG --> HG_S[app.services.histograms]
+        SS --> SS_S[app.services.summary_stats]
+    end
+
+    subgraph "Data Access"
+        TS_S & CM_S & AC_S & EV_S & HG_S & SS_S -->|"3. Load Data"| Load[app.load.get_datasets]
+        Load -->|"4. Search Local"| LocalData[(Local Zarr Data)]
+        Load -->|"5. Fallback to S3"| S3Data[(S3 Bucket)]
+        LocalData -.->|Read| Xarray[Xarray/Dask]
+        S3Data -.->|Stream| Xarray
+    end
+
+    subgraph "Processing"
+        Xarray -->|"6. Compute"| Stats[Climate Calculations]
+        Stats -->|"7. Form Response"| Response[Response Model]
+    end
+
+    Response --> Routers
+    Routers --> FastAPI
+    FastAPI -->|JSON Response| User

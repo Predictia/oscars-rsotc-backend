@@ -1,0 +1,34 @@
+2. Climate evolution of {params.region_name}
+
+Comparative summary for the {params.season_label} of {params.period_label}.
+
+Temperature
+- The warming trend is {tas.trend:.2f}°C per decade since 1940.
+- During the {params.season_label} of {params.period_label}, the mean temperature was {tas.value:.1f}°C, which represents an anomaly of {tas.anomalies["1991_2020"]:.1f}°C ({tas.anomalies_as_perc["1991_2020"]:.1f}%) relative to the 1991-2020 reference period (mean: {tas.ref_means["1991_2020"]:.1f}°C).
+- Average maximum temperatures were {tasmax_mean.value:.1f}°C (1991-2020 reference mean: {tasmax_mean.ref_means["1991_2020"]:.1f}°C), with an absolute maximum value of {tasmax_max.value:.1f}°C recorded in this period.
+- For the maximum value, the 90th and 95th reference percentiles (1991-2020) were {tasmax_max.ref_percentiles["1991_2020"]["90"]:.1f}°C and {tasmax_max.ref_percentiles["1991_2020"]["95"]:.1f}°C.
+- Average minimum temperatures were {tasmin_mean.value:.1f}°C (1991-2020 reference mean: {tasmin_mean.ref_means["1991_2020"]:.1f}°C), with an absolute minimum value of {tasmin_min.value:.1f}°C.
+
+Precipitation
+- Total precipitation in {params.season_filter} amounted to {pr_sum.value:.1f} mm.
+- This represents a variation of {pr_sum.anomalies["1991_2020"]:.1f} mm ({pr_sum.anomalies_as_perc["1991_2020"]:.1f}%) compared to the 1991-2020 reference mean of {pr_sum.ref_means["1991_2020"]:.1f} mm.
+- The wettest day of the season recorded {pr_max.value:.1f} mm. For context, the 90th and 95th reference percentiles for daily rainfall (1991-2020) were {pr_max.ref_percentiles["1991_2020"]["90"]:.1f} mm and {pr_max.ref_percentiles["1991_2020"]["95"]:.1f} mm.
+- {r1mm.value:.1f} wet days (≥1mm) were recorded, compared to the 1991-2020 average of {r1mm.ref_means["1991_2020"]:.1f} days.
+- {r20mm.value:.1f} heavy precipitation days (≥20mm) were observed (1991-2020 reference mean: {r20mm.ref_means["1991_2020"]:.1f} days).
+- The contribution of very wet days to the total (R95pTOT) was {r95ptot.value:.2f} (1991-2020 reference mean: {r95ptot.ref_means["1991_2020"]:.2f}).
+
+Frost days (FD)
+- {fd.value:.1f} frost days were observed, which represents a difference of {fd.anomalies["1991_2020"]:.1f} days relative to the 1991-2020 reference mean of {fd.ref_means["1991_2020"]:.1f} days.
+
+Intense heat days (TX30, TX35, TX40)
+- Hot days (>30°C: TX30): {tx30.value:.1f} days on average, with an anomaly of {tx30.anomalies["1991_2020"]:.1f} days compared to the 1991-2020 reference period.
+- Very hot days (>35°C: TX35): {tx35.value:.1f} days on average, showing an anomaly of {tx35.anomalies["1991_2020"]:.1f} days (1991-2020 mean: {tx35.ref_means["1991_2020"]:.1f} days).
+- Extremely hot days (>40°C: TX40): {tx40.value:.1f} days recorded (1991-2020 mean: {tx40.ref_means["1991_2020"]:.1f} days).
+
+Warm nights (TR20, TR25)
+- Tropical nights (>20°C: TR20) varied by {tr20.anomalies["1991_2020"]:.1f} days regarding the 1991-2020 historical mean of {tr20.ref_means["1991_2020"]:.1f} days.
+- {tr25.value:.1f} warm tropical nights (>25°C: TR25) were recorded (1991-2020 reference mean: {tr25.ref_means["1991_2020"]:.1f} days).
+
+Wind
+- The average wind speed was {sfcWind_mean.value:.1f} m/s, representing a variation of {sfcWind_mean.anomalies["1991_2020"]:.1f} m/s ({sfcWind_mean.anomalies_as_perc["1991_2020"]:.1f}%) compared to the 1991-2020 climatic normal of {sfcWind_mean.ref_means["1991_2020"]:.1f} m/s.
+- Maximum speeds reached {sfcWind_max.value:.1f} m/s (90th and 95th reference percentiles: {sfcWind_max.ref_percentiles["1991_2020"]["90"]:.1f} m/s and {sfcWind_max.ref_percentiles["1991_2020"]["95"]:.1f} m/s).

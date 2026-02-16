@@ -1,0 +1,58 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = ["setuptools>=45", "setuptools_scm[toml]>=6.2"]
+
+[project]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: Apache Software License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Scientific/Engineering"
+]
+dependencies = [
+  "fastapi",
+  "uvicorn",
+  "pydantic",
+  "python-dotenv",
+  "numpy",
+  "pandas",
+  "xarray",
+  "dask",
+  "netcdf4",
+  "zarr",
+  "s3fs",
+  "fsspec",
+  "requests"
+]
+description = "Backend for OSCARS-RSOTC"
+license = {file = "LICENSE"}
+name = "oscars-rsotc-backend"
+readme = "README.md"
+version = "0.1.0"
+
+[tool.mypy]
+exclude = ["tests", "docs"]
+ignore_missing_imports = true
+strict = false
+
+[tool.pytest.ini_options]
+log_cli = true
+log_level = "INFO"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+ignore = ["D1"]
+select = ["E", "F", "I", "W", "D"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.setuptools]
+packages = ["app"]

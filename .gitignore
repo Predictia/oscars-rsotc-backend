@@ -1,0 +1,65 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# --- Environments ---
+.env
+.env.*
+.venv
+venv/
+ENV/
+env.bak/
+env.python/
+
+# --- Testing & Coverage ---
+.pytest_cache/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.ruff_cache/
+.mypy_cache/
+htmlcov/
+
+# --- IDEs ---
+.idea/
+.vscode/
+.history/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# --- Project Specific ---
+.pixi/
+app.db
+*.log
+/resources/
+azure-replace.py
+
+# --- Documentation ---
+docs/_build/
