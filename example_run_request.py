@@ -5,9 +5,9 @@ body = {
     "variable": "r1mm;r20mm",
     "pressure_level": "None",
     "region_set": "NUTS-3",
-    "region_name": "ES412",
+    "region_name": "ES130",
     "period": "1940-2026",
-    "season_filter": "12-02",
+    "season_filter": "01-12",
     "reference_period": "1981-2010",
 }
 response = requests.post(

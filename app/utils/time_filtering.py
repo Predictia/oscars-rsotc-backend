@@ -4,12 +4,15 @@ Time filtering utility module.
 This module provides the TemporalFiltering class for slicing and aggregating
 climate data based on specific periods and seasonal filters.
 """
+import logging
 from calendar import monthrange
 from dataclasses import dataclass
 from typing import Optional, Tuple
 
 import numpy
 import xarray
+
+logger = logging.getLogger(__name__)
 
 mapping_statistics = {
     "mean": numpy.mean,
@@ -71,6 +74,9 @@ class TemporalFiltering:
         """
         # Parse the season string into start and end months
         start_month, end_month = self.time_filter.split("-")
+        logger.info(
+            f"Applying time filter: {self.time_filter} for period: {self.period_range}"
+        )
 
         # Select the temporal range of interest
         if self.period_range == "all":
@@ -102,6 +108,9 @@ class TemporalFiltering:
             data_for_seasons.append(data_for_season)
 
         data_for_period = xarray.concat(data_for_seasons, dim="time")
+        logger.info(
+            f"Temporal filtering complete. Total points: {len(data_for_period.time)}"
+        )
         return data_for_period
 
     def compute(self) -> Tuple[xarray.Dataset, xarray.Dataset]:
@@ -115,6 +124,7 @@ class TemporalFiltering:
         yearly_data_for_period : xarray.Dataset
             The aggregated (e.g., mean) data for each year in the period range.
         """
+        logger.info(f"Computing temporal statistics using: {self.statistical}")
         data_for_period = self.sel_time_filter()
         statistical_function = mapping_statistics[self.statistical]
         start_month = int(self.time_filter.split("-")[0])

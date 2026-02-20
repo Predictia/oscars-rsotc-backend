@@ -15,9 +15,9 @@ from app.utils.dataset_helpers import (
     get_single_dataset,
     handle_precomputed_time_filter,
 )
-from app.utils.ensure_data_type import ensure_float
 from app.utils.time_filtering import TemporalFiltering
 from app.utils.timings import log_execution_time
+from app.utils.transformation import ensure_float, transform_units
 
 logger = logging.getLogger(__name__)
 
@@ -56,21 +56,32 @@ def get_histograms(dataset: list[xr.Dataset], params: HistogramsParams) -> dict:
     )
 
     ds = get_single_dataset(dataset)
+    logger.info(f"Selecting region: {params.region_name}")
     ds = ds.sel(region=params.region_name)
+    ds = ensure_float(ds)
+    ds = transform_units(ds)
 
-    da_raw = ds.data_vars[
+    data_var = (
         params.variable if "_" not in params.variable else params.variable.split("_")[0]
-    ].load()
+    )
+    logger.info(f"Loading data variable: {data_var}")
+    da_raw = ds.data_vars[data_var].load()
+    logger.info(f"Raw data shape: {da_raw.shape}")
 
     if "time_filter" in da_raw.dims:
+        logger.info("Using precomputed time filter")
         # Pre-select season once
         da_season = handle_precomputed_time_filter(
             da_raw, params.season_filter, params.variable
         )
         # Filter by periods
+        logger.info(
+            f"Filtering by periods: {params.period} and {params.reference_period}"
+        )
         da = filter_by_period(da_season, params.period)
         da_reference = filter_by_period(da_season, params.reference_period)
     else:
+        logger.info("Calculating temporal filtering (no precomputed filter found)")
         # Filter both periods
         da = TemporalFiltering(
             da_raw,
@@ -84,10 +95,10 @@ def get_histograms(dataset: list[xr.Dataset], params: HistogramsParams) -> dict:
             params.season_filter,
         ).sel_time_filter()
 
-    # Ensure float conversion
-    da = ensure_float(da)
-    da_reference = ensure_float(da_reference)
-
+    logger.info(
+        f"Filtered data points - Period: {len(da.time)}, "
+        f"Reference: {len(da_reference.time)}"
+    )
     # Aplanar y eliminar NaNs
     data = da.values.flatten()
     data_reference = da_reference.values.flatten()

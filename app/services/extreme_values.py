@@ -14,9 +14,9 @@ from app.utils.dataset_helpers import (
     get_single_dataset,
     handle_precomputed_time_filter,
 )
-from app.utils.ensure_data_type import ensure_float
 from app.utils.time_filtering import TemporalFiltering
 from app.utils.timings import log_execution_time
+from app.utils.transformation import ensure_float, transform_units
 
 logger = logging.getLogger(__name__)
 
@@ -48,25 +48,33 @@ def get_extreme_values(dataset: list[xr.Dataset], params: ExtremeValuesParams) -
     )
 
     ds = get_single_dataset(dataset)
+    logger.info(f"Selecting region: {params.region_name}")
     ds = ds.sel(region=params.region_name)
+    ds = ensure_float(ds)
+    ds = transform_units(ds)
 
-    da_raw = ds.data_vars[
+    data_var = (
         params.variable if "_" not in params.variable else params.variable.split("_")[0]
-    ].load()
+    )
+    logger.info(f"Loading data variable: {data_var}")
+    da_raw = ds.data_vars[data_var].load()
+    logger.info(f"Raw data shape: {da_raw.shape}")
 
     if "time_filter" in da_raw.dims:
+        logger.info("Using precomputed time filter")
         da = handle_precomputed_time_filter(
             da_raw, params.season_filter, params.variable
         )
         da = filter_by_period(da, params.period)
     else:
+        logger.info("Calculating temporal filtering (no precomputed filter found)")
         da = TemporalFiltering(
             da_raw,
             params.period,
             params.season_filter,
         ).sel_time_filter()
 
-    da = ensure_float(da)
+    logger.info(f"Filtered data points: {len(da.time)}")
 
     df = da.to_dataframe().reset_index()
     df = df.sort_values(by=[params.variable], ascending=False)

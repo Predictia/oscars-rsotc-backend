@@ -6,6 +6,7 @@ from app.models.summary_stats_params import SummaryStatsParams
 from app.models.time_series_params import TimeseriesParams
 from app.services.summary_stats import get_summary_stats
 from app.services.time_series import get_time_series
+from app.utils.transformation import ensure_float
 
 
 def test_summary_stats_timedelta_serialization():
@@ -37,6 +38,7 @@ def test_summary_stats_timedelta_serialization():
     ds = xr.Dataset(
         data_vars={"fd_None": (("time",), values_ns)}, coords={"time": times}
     ).expand_dims(region=["ES130"])
+    ds = ensure_float(ds)
 
     params = SummaryStatsParams(
         dataset="ERA5",
@@ -75,6 +77,8 @@ def test_time_series_timedelta_serialization():
     ds = xr.Dataset(
         data_vars={"fd_None": (("time",), values_ns)}, coords={"time": times}
     ).expand_dims(region=["ES130"])
+
+    ds = ensure_float(ds)
 
     params = TimeseriesParams(
         dataset="ERA5",

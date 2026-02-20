@@ -14,9 +14,9 @@ from app.utils.dataset_helpers import (
     get_single_dataset,
     handle_precomputed_time_filter,
 )
-from app.utils.ensure_data_type import ensure_float
 from app.utils.time_filtering import TemporalFiltering
 from app.utils.timings import log_execution_time
+from app.utils.transformation import ensure_float, transform_units
 
 logger = logging.getLogger(__name__)
 
@@ -54,18 +54,26 @@ def get_climatology_map(
     # Validate and get single dataset
     ds = get_single_dataset(dataset)
     # Select regions
-    ds = ds.sel(region=params.region_name.split(";"))
+    regions = params.region_name.split(";")
+    logger.info(f"Selecting {len(regions)} regions")
+    ds = ds.sel(region=regions)
+    ds = ensure_float(ds)
+    ds = transform_units(ds)
 
+    logger.info(f"Loading data variable: {params.variable}")
     da_raw = ds.data_vars[params.variable].load()
+    logger.info(f"Raw data shape: {da_raw.shape}")
 
     if "time_filter" in da_raw.dims:
+        logger.info("Using precomputed time filter")
         da = handle_precomputed_time_filter(
             da_raw, params.season_filter, params.variable
         )
         yearly_filtered_data = filter_by_period(da, params.period)
     else:
+        logger.info("Calculating temporal filtering (no precomputed filter found)")
         if params.resample_freq:
-            logger.debug(
+            logger.info(
                 f"Resampling data to frequency: {params.resample_freq} "
                 f"using {params.resample_func or 'mean'}"
             )
@@ -76,7 +84,7 @@ def get_climatology_map(
         else:
             da = da_raw.copy()
 
-        logger.debug(f"Applying temporal filtering for period: {params.period}")
+        logger.info(f"Applying temporal filtering for period: {params.period}")
 
         filtered_data, yearly_filtered_data = TemporalFiltering(
             da,
@@ -93,6 +101,7 @@ def get_climatology_map(
                 da_raw, params.season_filter, params.variable
             )
             # Use filter_by_period to slice time, then mean
+            logger.info(f"Filtering reference period: {params.reference_period}")
             ref_filtered = filter_by_period(ref_da, params.reference_period)
             ref_clim = ref_filtered.mean("time")
             yearly_filtered_data = yearly_filtered_data - ref_clim
@@ -106,7 +115,11 @@ def get_climatology_map(
             ref_clim = ref_filtered_yearly_data.mean("time")
             yearly_filtered_data = yearly_filtered_data - ref_clim
 
-    yearly_filtered_data = ensure_float(yearly_filtered_data)
+    final_points = (
+        len(yearly_filtered_data.time) if "time" in yearly_filtered_data.dims else "N/A"
+    )
+    logger.info(f"Final data points after filtering: {final_points}")
+
     climatology_filtered_data = yearly_filtered_data.mean("time")
     region_values = yearly_filtered_data.region.values
 

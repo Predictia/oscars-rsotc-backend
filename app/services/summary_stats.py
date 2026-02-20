@@ -6,10 +6,10 @@ import numpy as np
 import xarray as xr
 
 from app.models.summary_stats_params import SummaryStatsParams
-from app.utils.ensure_data_type import ensure_float
 from app.utils.time_filtering import TemporalFiltering
 from app.utils.time_filtering_indices import get_time_filter_name
 from app.utils.timings import log_execution_time
+from app.utils.transformation import ensure_float, transform_units
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,6 @@ def calculate_trend(da_yearly: xr.DataArray, start_year: int = 1940) -> Optional
         The calculated trend per decade, or None if calculation fails.
     """
     try:
-        da_yearly = ensure_float(da_yearly)
         da_slice = da_yearly.sel(time=slice(f"{start_year}", None))
 
         if len(da_slice) < 10:
@@ -167,9 +166,6 @@ def _calculate_variable_stats(
         _, da_yearly_ds = tf.compute()
         da_yearly = da_yearly_ds[short_name]
 
-    # Ensure we work with floats (days) instead of raw timedeltas
-    da_yearly = ensure_float(da_yearly)
-
     # Target period value
     try:
         start_p, end_p = params.period.split("-")
@@ -294,8 +290,11 @@ def get_summary_stats(
         if ds_var is None:
             continue
 
-        da = ds_var.sel(region=region)[internal_var].load()
-        unit = ds_var[internal_var].attrs.get("units", "")
+        ds_region = ds_var.sel(region=region)
+        ds_region = ensure_float(ds_region)
+        ds_region = transform_units(ds_region)
+        da = ds_region[internal_var].load()
+        unit = da.attrs.get("units", "")
         if not unit:
             # Fallback units if not present in attrs
             units_map = {

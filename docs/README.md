@@ -188,6 +188,7 @@ Generates a structured summary of climate conditions for multiple variables.
 
 - [Predictia](https://predictia.es) - Predictia Intelligent Data Solutions S.L.
 - [IFCA](https://ifca.unican.es/es-es) - Instituto de Física de Cantabria
+- [OSCARS project](https://oscars-project.eu/projects/rsotc-regional-state-climate-dashboard) - The OSCARS project has received funding from the European Commission’s Horizon Europe Research and Innovation programme under grant agreement No. 101129751
 
 ## License
 

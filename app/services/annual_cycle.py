@@ -11,8 +11,8 @@ import pandas as pd
 import xarray as xr
 
 from app.models.annual_cycle_params import AnnualCycleParams
-from app.utils.ensure_data_type import ensure_float
 from app.utils.timings import log_execution_time
+from app.utils.transformation import ensure_float, transform_units
 
 logger = logging.getLogger(__name__)
 
@@ -53,28 +53,37 @@ def get_annual_cycle(
     if len(dataset) > 1:
         raise ValueError("Multiple datasets not supported for annual cycle calculation")
     else:
+        logger.info(f"Selecting region: {params.region_name}")
         ds = dataset[0].sel(region=params.region_name)
+        ds = ensure_float(ds)
+        ds = transform_units(ds)
 
-    da_raw = ds.data_vars[
+    data_var = (
         params.variable if "_" not in params.variable else params.variable.split("_")[0]
-    ].load()
+    )
+    logger.info(f"Loading data variable: {data_var}")
+    da_raw = ds.data_vars[data_var].load()
+    logger.info(f"Raw data shape: {da_raw.shape}")
 
     if "time_filter" in da_raw.dims:
         raise NotImplementedError("Annual cycle calculation for indices not possible")
 
+    logger.info(f"Slicing data for period: {params.period}")
     data = da_raw.sel(time=slice(*params.period.split("-")))
+    logger.info(f"Slicing data for reference period: {params.reference_period}")
     reference_data = da_raw.sel(time=slice(*params.reference_period.split("-")))
 
-    data = ensure_float(data)
-    reference_data = ensure_float(reference_data)
-
+    logger.info(
+        f"Data points - Current: {len(data.time)}, "
+        f"Reference: {len(reference_data.time)}"
+    )
     df_data = data.to_dataframe(name="value").reset_index()
     df_reference = reference_data.to_dataframe(name="value").reset_index()
 
     df_data["dayofyear"] = df_data["time"].dt.strftime("%m-%d")
     df_reference["dayofyear"] = df_reference["time"].dt.strftime("%m-%d")
 
-    logger.debug(f"Calculating stats for reference period: {params.reference_period}")
+    logger.info(f"Calculating stats for reference period: {params.reference_period}")
 
     stats = (
         df_reference.groupby("dayofyear")["value"]

@@ -30,5 +30,5 @@ Warm nights (TR20, TR25)
 - {tr25.value:.1f} warm tropical nights (>25°C: TR25) were recorded (1991-2020 reference mean: {tr25.ref_means["1991_2020"]:.1f} days).
 
 Wind
-- The average wind speed was {sfcWind_mean.value:.1f} m/s, representing a variation of {sfcWind_mean.anomalies["1991_2020"]:.1f} m/s ({sfcWind_mean.anomalies_as_perc["1991_2020"]:.1f}%) compared to the 1991-2020 climatic normal of {sfcWind_mean.ref_means["1991_2020"]:.1f} m/s.
-- Maximum speeds reached {sfcWind_max.value:.1f} m/s (90th and 95th reference percentiles: {sfcWind_max.ref_percentiles["1991_2020"]["90"]:.1f} m/s and {sfcWind_max.ref_percentiles["1991_2020"]["95"]:.1f} m/s).
+- The average wind speed was {sfcWind_mean.value:.1f} km/h, representing a variation of {sfcWind_mean.anomalies["1991_2020"]:.1f} km/h ({sfcWind_mean.anomalies_as_perc["1991_2020"]:.1f}%) compared to the 1991-2020 climatic normal of {sfcWind_mean.ref_means["1991_2020"]:.1f} km/h.
+- Maximum speeds reached {sfcWind_max.value:.1f} km/h (90th and 95th reference percentiles: {sfcWind_max.ref_percentiles["1991_2020"]["90"]:.1f} km/h and {sfcWind_max.ref_percentiles["1991_2020"]["95"]:.1f} km/h).

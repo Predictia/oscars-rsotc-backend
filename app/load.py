@@ -326,10 +326,6 @@ def get_datasets(params: RequestParams) -> Union[xr.Dataset, list[xr.Dataset]]:
                 continue
 
             if varname in ds.data_vars:
-                # Transform sfcWind from m/s to km/h
-                if varname == "sfcWind":
-                    ds[varname] = ds[varname] * 3.6
-                    ds[varname].attrs["units"] = "km/h"
                 ds = ds.rename({varname: combined_variable})
                 logger.debug(f"Renamed variable '{varname}' to '{combined_variable}'")
 

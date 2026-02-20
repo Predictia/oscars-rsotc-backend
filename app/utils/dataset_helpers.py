@@ -55,6 +55,8 @@ def handle_precomputed_time_filter(
         The DataArray selected for the specific time filter.
     """
     tf_name = get_time_filter_name(season_filter)
+    logger.info(f"Handling precomputed time filter: {tf_name} for variable: {variable}")
+
     if tf_name not in da.time_filter.values:
         logger.warning(
             f"Season {season_filter} (mapped to {tf_name}) not found "
@@ -62,7 +64,12 @@ def handle_precomputed_time_filter(
         )
         tf_name = "Annual"
 
-    return da.sel(time_filter=tf_name).dropna(dim="time")
+    selected_da = da.sel(time_filter=tf_name).dropna(dim="time")
+    logger.info(
+        f"Selected time filter '{tf_name}'. "
+        f"Data points remaining: {len(selected_da.time)}"
+    )
+    return selected_da
 
 
 def filter_by_period(da: xr.DataArray, period: str) -> xr.DataArray:
@@ -84,6 +91,26 @@ def filter_by_period(da: xr.DataArray, period: str) -> xr.DataArray:
         The filtered DataArray.
     """
     if period != "all":
-        start, end = period.split("-")
-        return da.sel(time=slice(start, end))
+        try:
+            start, end = period.split("-")
+            logger.info(f"Filtering by period: {start} to {end}")
+
+            # Log time index properties to help debug non-monotonic issues
+            if not da.indexes["time"].is_monotonic_increasing:
+                logger.warning("Time index is not monotonic increasing!")
+
+            time_range = da.time.values
+            if len(time_range) > 0:
+                logger.info(
+                    f"Available time range: {time_range[0]} to {time_range[-1]}"
+                )
+            else:
+                logger.warning(
+                    "DataArray has an empty time dimension before filtering."
+                )
+
+            return da.sel(time=slice(start, end))
+        except Exception as e:
+            logger.error(f"Error filtering by period '{period}': {str(e)}")
+            raise
     return da.copy()

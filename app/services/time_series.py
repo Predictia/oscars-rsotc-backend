@@ -10,26 +10,50 @@ import xarray as xr
 
 from app.models.time_series_params import TimeseriesParams
 from app.utils.dataset_helpers import filter_by_period, handle_precomputed_time_filter
-from app.utils.ensure_data_type import ensure_float
 from app.utils.time_filtering import TemporalFiltering
 from app.utils.timings import log_execution_time
+from app.utils.transformation import ensure_float, transform_units
 
 logger = logging.getLogger(__name__)
 
 
 def _process_single_dataset(ds: xr.Dataset, params: TimeseriesParams) -> xr.DataArray:
-    """Process a single dataset to extract the yearly filtered data."""
+    """
+    Process a single dataset to extract the yearly filtered data.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        The input dataset to process.
+    params : TimeseriesParams
+        Parameters containing region, period, and filtering options.
+
+    Returns
+    -------
+    xr.DataArray
+        The processed and filtered data array.
+    """
+    logger.info(f"Processing dataset for region: {params.region_name}")
     ds = ds.sel(region=params.region_name)
+    ds = ensure_float(ds)
+    ds = transform_units(ds)
     data_var = list(ds.data_vars)[0]
     da_raw = ds[data_var].load()
+    logger.info(f"Loaded data variable: {data_var} with shape: {da_raw.shape}")
 
     if "time_filter" in da_raw.dims:
+        logger.info("Using precomputed time filter")
         da = handle_precomputed_time_filter(
             da_raw, params.season_filter, params.variable
         )
         yearly_filtered_data = filter_by_period(da, params.period)
     else:
+        logger.info("Calculating temporal filtering (no precomputed filter found)")
         if params.resample_freq:
+            logger.info(
+                f"Resampling data to: {params.resample_freq} "
+                f"using {params.resample_func or 'mean'}"
+            )
             da = getattr(
                 da_raw.resample(time=params.resample_freq),
                 params.resample_func or "mean",
@@ -55,6 +79,10 @@ def _process_single_dataset(ds: xr.Dataset, params: TimeseriesParams) -> xr.Data
         ref_clim = ref_filtered_yearly_data.mean("time")
         yearly_filtered_data = yearly_filtered_data - ref_clim
 
+    logger.info(
+        f"Finished processing dataset. "
+        f"Resulting time points: {len(yearly_filtered_data.time)}"
+    )
     return yearly_filtered_data
 
 
@@ -88,7 +116,6 @@ def get_time_series(dataset: list[xr.Dataset], params: TimeseriesParams) -> dict
     yearly_filtered_data_list = [_process_single_dataset(ds, params) for ds in dataset]
 
     yearly_filtered_data = xr.merge(yearly_filtered_data_list)
-    yearly_filtered_data = ensure_float(yearly_filtered_data)
 
     time_values = yearly_filtered_data.time.dt.strftime("%Y-%m-%d").values
 
